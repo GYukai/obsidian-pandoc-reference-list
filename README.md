@@ -1,3 +1,7 @@
+# Pandoc Reference List — maintained fork
+
+Fixes blank `[[@citekey]]` citations in Obsidian Live Preview while retaining inline formatting and literature-note navigation. Includes Zotero synchronization fixes. Install the **Pandoc Reference List (Maintained)** release, disable the original plugin, and copy its settings locally. The independent plugin ID prevents official updates from overwriting this fork. See [maintenance and installation notes](MAINTENANCE.md).
+
 ## Obsidian Pandoc Reference List
 
 Displays a formatted reference in the sidebar for each pandoc citekey present in the current document.

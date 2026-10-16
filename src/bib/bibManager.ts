@@ -385,7 +385,7 @@ export class BibManager {
         );
         if (list?.length) {
           bib.push(...list);
-          group.lastUpdate = Date.now();
+          if (list.syncedAt !== undefined) group.lastUpdate = list.syncedAt;
         }
       } catch (e) {
         console.error('Error fetching bibliography from Zotero', e);
@@ -436,16 +436,17 @@ export class BibManager {
 
     for (const group of settings.zoteroGroups) {
       try {
+        const syncStartedAt = Date.now() - 1000;
         const res = await refreshZBib(
           settings.zoteroPort,
           cacheDir,
           group.id,
-          group.lastUpdate
+          group.lastUpdate || 0
         );
         if (!res) continue;
         if (res.list?.length) {
           bib.push(...res.list);
-          group.lastUpdate = Date.now();
+          group.lastUpdate = syncStartedAt;
         }
 
         for (const [k, v] of res.modified.entries()) {

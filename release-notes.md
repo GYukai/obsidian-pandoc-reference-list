@@ -1,1 +1,3 @@
-86918b5 Fix BBT API change
+Fix blank citation wikilinks in Live Preview by replacing both bracket pairs with a higher-precedence citation widget. Preserve inline CSL formatting, link destinations, modifier-click navigation and source editing. Carry forward Zotero synchronization checkpoint, export endpoint and offline-cache fixes. Independent plugin ID: pandoc-reference-list-maintained; disable the original before enabling this fork.
+
+Validation: 61 parser/range tests, 7 synchronization regressions, production build, and live Obsidian 1.13.7 checks. The upstream full TypeScript check remains blocked by existing compiler/declaration and locator-source incompatibilities.

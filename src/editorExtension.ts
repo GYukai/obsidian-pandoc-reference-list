@@ -27,6 +27,8 @@ import { BibManager, FileCache } from './bib/bibManager';
 import equal from 'fast-deep-equal';
 import { TooltipManager } from './tooltip';
 
+import { citationReplacementRange } from './citationRange';
+
 const ignoreListRegEx = /code|math|templater|hashtag/;
 
 const citeMark = (
@@ -83,7 +85,7 @@ class CiteWidget extends WidgetType {
   }
 
   eq(widget: this): boolean {
-    return this.cite === widget.cite;
+    return this.cite === widget.cite && this.sourcePath === widget.sourcePath && this.linkText === widget.linkText;
   }
 
   toDOM() {
@@ -183,6 +185,7 @@ export const citeKeyPlugin = ViewPlugin.fromClass(
 
       // Don't get the syntax tree until we have to
       let tree: Tree;
+      let documentText: string;
 
       const matched = new Set<RenderedCitation>();
 
@@ -207,16 +210,22 @@ export const citeKeyPlugin = ViewPlugin.fromClass(
 
           if (isLivePreview) {
             if (rendered) {
-              const start = from + match[0].from;
-              const end = from + match[match.length - 1].to;
+              // The parser includes only the inner brackets of a wikilink.
+              // Replace both pairs: a partial overlap lets Live Preview's
+              // native bracket replacements discard our citation widget.
+              const { start, end, linkText: wikiTarget } = citationReplacementRange(
+                documentText ?? (documentText = view.state.doc.toString()),
+                from + match[0].from,
+                from + match[match.length - 1].to
+              );
               const center = Math.round((start + end) / 2);
 
-              let linkText: string;
+              let linkText: string = wikiTarget;
 
               const centerNode = tree.resolveInner(center, 0);
 
               if (
-                centerNode.type
+                !linkText && centerNode.type
                   .prop(tokenClassNodeProp)
                   ?.includes('hmd-internal-link')
               ) {

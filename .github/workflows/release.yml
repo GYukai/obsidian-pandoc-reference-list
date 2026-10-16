@@ -1,34 +1,17 @@
-name: Release Obsidian plugin
-
-on:
-  push:
-    tags:
-      - '*'
-
+name: Build and verify
+on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
-
-      - name: Build plugin
-        run: |
-          npm install
-          npm run build
-
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-
-          gh release create "$tag" \
-            --title="$tag" \
-            --notes-file="release-notes.md" \
-            main.js manifest.json styles.css
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test -- --runInBand src/citationRange.test.ts src/parser/tests/parser.test.ts
+      - run: npm run test:sync
+      - run: npm run build

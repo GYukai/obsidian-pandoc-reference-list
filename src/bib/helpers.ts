@@ -309,7 +309,7 @@ export async function getZBib(
   cacheDir: string,
   groupId: number,
   loadCached?: boolean
-) {
+): Promise<(CSLList & { syncedAt?: number }) | null> {
   const isRunning = await isZoteroRunning(port);
   const cached = path.join(cacheDir, `zotero-library-${groupId}.json`);
 
@@ -326,15 +326,24 @@ export async function getZBib(
     }
   }
 
-  const bib = await download(
-    `http://127.0.0.1:${port}/better-bibtex/export/library?/${groupId}/library.json`
-  );
-
-  const str = bib.toString();
-
-  fs.writeFileSync(cached, str);
-
-  return applyGroupID(JSON.parse(str) as CSLList, groupId);
+  // Reading a cached export must not advance the synchronization checkpoint.
+  const syncedAt = Date.now() - 1000;
+  try {
+    const bib = await download(
+      `http://127.0.0.1:${port}/better-bibtex/export?/library;id:${groupId}/library.json`
+    );
+    const str = bib.toString();
+    const list = JSON.parse(str);
+    if (!Array.isArray(list)) throw new Error('Invalid Zotero bibliography: expected a CSL JSON array');
+    fs.writeFileSync(cached, str);
+    return Object.assign(applyGroupID(list as CSLList, groupId), { syncedAt });
+  } catch (error) {
+    if (fs.existsSync(cached)) {
+      console.warn('Zotero export failed; using cached bibliography', error);
+      return applyGroupID(JSON.parse(fs.readFileSync(cached).toString()) as CSLList, groupId);
+    }
+    throw error;
+  }
 }
 
 export async function refreshZBib(
