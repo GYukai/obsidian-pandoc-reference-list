@@ -3,7 +3,7 @@ import path from 'path';
 import which from 'which';
 
 export function pathOptions(value = ''): string[] {
-  return [...new Set(value.split(/\r?\n/).map(s => s.trim().replace(/^"(.*)"$/, '$1')).filter(Boolean))];
+  return [...new Set(value.split(/[,\r\n]+/).map(s => s.trim().replace(/^"(.*)"$/, '$1')).filter(Boolean))];
 }
 
 export function localPath(value: string, root?: string): string {

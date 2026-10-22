@@ -70,7 +70,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Pandoc paths (in fallback order)')
-      .setDesc('One executable path per line, in priority order. Unavailable paths are skipped; system PATH is tried last. You can keep Mac and Windows paths together.')
+      .setDesc('Separate executable paths with commas, in priority order. Unavailable paths are skipped; system PATH is tried last. You can keep Mac and Windows paths together.')
       .then((setting) => {
         let input: TextAreaComponent;
         setting.addTextArea((text) => {
@@ -90,7 +90,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
             which('pandoc')
               .then((pathToPandoc) => {
                 if (pathToPandoc) {
-                  const paths = pathOptions(this.plugin.settings.pathToPandoc + '\n' + pathToPandoc).join('\n');
+                  const paths = pathOptions(this.plugin.settings.pathToPandoc + '\n' + pathToPandoc).join(', ');
                   input.setValue(paths);
 
                   this.plugin.settings.pathToPandoc = paths;
@@ -117,7 +117,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Bibliography paths (in fallback order)')
-      .setDesc('One .bib or CSL JSON file per line. The first readable file is used. Absolute paths and vault-relative paths are supported; these are alternatives, not merged libraries. Frontmatter bibliography still overrides this setting.')
+      .setDesc('Separate .bib or CSL JSON file paths with commas. The first readable file is used. Absolute paths and vault-relative paths are supported; these are alternatives, not merged libraries. Frontmatter bibliography still overrides this setting.')
       .then((setting) => {
         let input: TextAreaComponent;
         setting.addTextArea((text) => {
@@ -145,7 +145,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
             });
 
             if (path && path.length) {
-              const paths = pathOptions((this.plugin.settings.pathToBibliography || '') + '\n' + path[0]).join('\n');
+              const paths = pathOptions((this.plugin.settings.pathToBibliography || '') + '\n' + path[0]).join(', ');
               input.setValue(paths);
               this.plugin.settings.pathToBibliography = paths;
               this.plugin.saveSettings(() =>

@@ -44,3 +44,7 @@ test('rejects non CSL files', () => {
   const source = path.join(root, 'a.txt'); fs.writeFileSync(source, 'x');
   expect(() => importStyle(source, root)).toThrow('readable .csl');
 });
+
+test('accepts comma-separated paths and mixed legacy newlines', () => {
+  expect(pathOptions('C:\\Program Files\\Pandoc\\pandoc.exe, /opt/homebrew/bin/pandoc\n/usr/local/bin/pandoc')).toEqual(['C:\\Program Files\\Pandoc\\pandoc.exe', '/opt/homebrew/bin/pandoc', '/usr/local/bin/pandoc']);
+});
