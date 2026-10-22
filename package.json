@@ -1,6 +1,6 @@
 {
   "name": "pandoc-reference-list-maintained",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Maintained Pandoc Reference List with Live Preview wikilink rendering and Zotero synchronization fixes.",
   "main": "main.js",
   "scripts": {

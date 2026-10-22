@@ -189,11 +189,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName(t('Custom citation style'))
-      .setDesc(
-        t(
-          'Use a vault-relative CSL path. The folder button imports an external file into Citation Styles and stores a relative path for Mac/Windows portability. Existing absolute paths remain supported. Frontmatter csl or citation-style overrides this setting.'
-        )
-      )
+      .setDesc('Use a vault-relative CSL path. The folder button imports an external file into Citation Styles and stores a relative path for Mac/Windows portability. Existing absolute paths remain supported. Frontmatter csl or citation-style overrides this setting.')
       .then((setting) => {
         let input: TextComponent;
         setting.addText((text) => {
