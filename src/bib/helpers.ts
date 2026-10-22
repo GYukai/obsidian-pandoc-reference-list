@@ -1,3 +1,4 @@
+import { resolveBibliography, pandocOptions, localPath } from '../paths';
 import { execa } from 'execa';
 import fs from 'fs';
 import path from 'path';
@@ -15,19 +16,7 @@ function ensureDir(dir: string) {
 }
 
 export function getBibPath(bibPath: string, getVaultRoot?: () => string) {
-  if (!fs.existsSync(bibPath)) {
-    const orig = bibPath;
-    if (getVaultRoot) {
-      bibPath = path.join(getVaultRoot(), bibPath);
-      if (!fs.existsSync(bibPath)) {
-        throw new Error(`bibToCSL: cannot access bibliography file '${bibPath}'.`);
-      }
-    } else {
-      throw new Error(`bibToCSL: cannot access bibliography file '${orig}'.`);
-    }
-  }
-
-  return bibPath;
+  return resolveBibliography(bibPath, getVaultRoot?.());
 }
 
 export async function bibToCSL(
@@ -51,23 +40,15 @@ export async function bibToCSL(
     });
   }
 
-  if (!pathToPandoc) {
-    throw new Error('bibToCSL: path to pandoc is required for non CSL files.');
+  const failures: string[] = [];
+  for (const executable of pandocOptions(pathToPandoc)) {
+    try {
+      const res = await execa(executable, [bibPath, '-t', 'csljson', '--quiet']);
+      return JSON.parse(res.stdout);
+    } catch (error) { failures.push(`${executable}: ${error.message}`); }
   }
+  throw new Error(`Unable to convert bibliography with Pandoc. ${failures.join('; ') || 'No usable executable found in configured paths or PATH.'}`);
 
-  if (!fs.existsSync(pathToPandoc)) {
-    throw new Error(`bibToCSL: cannot access pandoc at '${pathToPandoc}'.`);
-  }
-
-  const args = [bibPath, '-t', 'csljson', '--quiet'];
-
-  const res = await execa(pathToPandoc, args);
-
-  if (res.stderr) {
-    throw new Error(`bibToCSL: ${res.stderr}`);
-  }
-
-  return JSON.parse(res.stdout);
 }
 
 export async function getCSLLocale(
@@ -118,20 +99,22 @@ export async function getCSLStyle(
   styleCache: Map<string, string>,
   cacheDir: string,
   url: string,
-  explicitPath?: string
+  explicitPath?: string,
+  vaultRoot?: string
 ) {
   if (explicitPath) {
     if (styleCache.has(explicitPath)) {
       return styleCache.get(explicitPath);
     }
 
-    if (!fs.existsSync(explicitPath)) {
+    const resolvedPath = localPath(explicitPath, vaultRoot);
+    if (!fs.existsSync(resolvedPath)) {
       throw new Error(
         `Error: retrieving citation style; Cannot find file '${explicitPath}'.`
       );
     }
 
-    const styleData = fs.readFileSync(explicitPath).toString();
+    const styleData = fs.readFileSync(resolvedPath).toString();
     styleCache.set(explicitPath, styleData);
     return styleData;
   }

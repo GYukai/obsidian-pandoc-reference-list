@@ -8,7 +8,6 @@ import {
   debounce,
   setIcon,
 } from 'obsidian';
-import which from 'which';
 
 import {
   citeKeyCacheField,
@@ -82,16 +81,7 @@ export default class ReferenceList extends Plugin {
 
     // No need to block execution
     fixPath().then(async () => {
-      if (!this.settings.pathToPandoc) {
-        try {
-          // Attempt to find if/where pandoc is located on the user's machine
-          const pathToPandoc = await which('pandoc');
-          this.settings.pathToPandoc = pathToPandoc;
-          this.saveSettings();
-        } catch {
-          // We can ignore any errors here
-        }
-      }
+      // Resolve PATH at use time; never overwrite shared cross-platform settings.
 
       this.initPromise.resolve();
       this.app.workspace.trigger('parse-style-settings');

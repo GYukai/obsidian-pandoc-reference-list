@@ -1,4 +1,6 @@
-import { Notice, PluginSettingTab, Setting, TextComponent } from 'obsidian';
+import { pathOptions, importStyle } from './paths';
+import { getVaultRoot } from './helpers';
+import { Notice, PluginSettingTab, Setting, TextComponent, TextAreaComponent } from 'obsidian';
 import which from 'which';
 
 import { t } from './lang/helpers';
@@ -67,17 +69,15 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     new Setting(containerEl)
-      .setName(t('Fallback path to Pandoc'))
-      .setDesc(
-        t(
-          "The absolute path to the Pandoc executable. This plugin will attempt to locate pandoc for you and will use this path if it fails to do so. To find pandoc, use the output of 'which pandoc' in a terminal on Mac/Linux or 'Get-Command pandoc' in powershell on Windows."
-        )
-      )
+      .setName('Pandoc paths (in fallback order)')
+      .setDesc('One executable path per line, in priority order. Unavailable paths are skipped; system PATH is tried last. You can keep Mac and Windows paths together.')
       .then((setting) => {
-        let input: TextComponent;
-        setting.addText((text) => {
+        let input: TextAreaComponent;
+        setting.addTextArea((text) => {
+          text.inputEl.rows = 3;
+          text.inputEl.cols = 42;
           input = text;
-          text.setValue(this.plugin.settings.pathToPandoc).onChange((value) => {
+          text.setValue(this.plugin.settings.pathToPandoc || '').onChange((value) => {
             this.plugin.settings.pathToPandoc = value;
             this.plugin.saveSettings();
           });
@@ -90,9 +90,10 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
             which('pandoc')
               .then((pathToPandoc) => {
                 if (pathToPandoc) {
-                  input.setValue(pathToPandoc);
+                  const paths = pathOptions(this.plugin.settings.pathToPandoc + '\n' + pathToPandoc).join('\n');
+                  input.setValue(paths);
 
-                  this.plugin.settings.pathToPandoc = pathToPandoc;
+                  this.plugin.settings.pathToPandoc = paths;
                   this.plugin.saveSettings();
                 } else {
                   new Notice(
@@ -115,18 +116,16 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName(t('Path to bibliography file'))
-      .setDesc(
-        t(
-          'The absolute path to your desired bibliography file. This can be overridden on a per-file basis by setting "bibliography" in the file\'s frontmatter.'
-        )
-      )
+      .setName('Bibliography paths (in fallback order)')
+      .setDesc('One .bib or CSL JSON file per line. The first readable file is used. Absolute paths and vault-relative paths are supported; these are alternatives, not merged libraries. Frontmatter bibliography still overrides this setting.')
       .then((setting) => {
-        let input: TextComponent;
-        setting.addText((text) => {
+        let input: TextAreaComponent;
+        setting.addTextArea((text) => {
+          text.inputEl.rows = 3;
+          text.inputEl.cols = 42;
           input = text;
           text
-            .setValue(this.plugin.settings.pathToBibliography)
+            .setValue(this.plugin.settings.pathToBibliography || '')
             .onChange((value) => {
               const prev = this.plugin.settings.pathToBibliography;
               this.plugin.settings.pathToBibliography = value;
@@ -146,9 +145,9 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
             });
 
             if (path && path.length) {
-              input.setValue(path[0]);
-
-              this.plugin.settings.pathToBibliography = path[0];
+              const paths = pathOptions((this.plugin.settings.pathToBibliography || '') + '\n' + path[0]).join('\n');
+              input.setValue(paths);
+              this.plugin.settings.pathToBibliography = paths;
               this.plugin.saveSettings(() =>
                 this.plugin.bibManager.reinit(true)
               );
@@ -192,7 +191,7 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
       .setName(t('Custom citation style'))
       .setDesc(
         t(
-          'Path to a CSL file. This can be an absolute path or one relative to your vault. This will override the style selected above. This can be overridden on a per-file basis by setting "csl" or "citation-style" in the file\'s frontmatter. A URL can be supplied when setting the style via frontmatter.'
+          'Use a vault-relative CSL path. The folder button imports an external file into Citation Styles and stores a relative path for Mac/Windows portability. Existing absolute paths remain supported. Frontmatter csl or citation-style overrides this setting.'
         )
       )
       .then((setting) => {
@@ -216,9 +215,11 @@ export class ReferenceListSettingsTab extends PluginSettingTab {
             });
 
             if (path && path.length) {
-              input.setValue(path[0]);
-
-              this.plugin.settings.cslStylePath = path[0];
+              let imported: string;
+              try { imported = importStyle(path[0], getVaultRoot()); }
+              catch (error) { new Notice(error.message); return; }
+              input.setValue(imported);
+              this.plugin.settings.cslStylePath = imported;
               this.plugin.saveSettings(() =>
                 this.plugin.bibManager.reinit(false)
               );

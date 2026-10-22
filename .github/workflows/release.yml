@@ -12,6 +12,6 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm test -- --runInBand src/citationRange.test.ts src/parser/tests/parser.test.ts
+      - run: npm test -- --runInBand src/paths.test.ts src/citationRange.test.ts src/parser/tests/parser.test.ts
       - run: npm run test:sync
       - run: npm run build

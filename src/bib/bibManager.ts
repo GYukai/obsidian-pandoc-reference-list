@@ -189,7 +189,11 @@ export class BibManager {
   async reinit(clearCache: boolean) {
     this.initPromise = new PromiseCapability();
     this.fileCache.clear();
-    if (clearCache) this.bibCache.clear();
+    this.styleCache.clear();
+    if (clearCache) {
+      this.bibCache.clear();
+      for (const file of [...this.watcherCache.keys()]) this.clearWatcher(file);
+    }
 
     if (this.plugin.settings.pullFromZotero) {
       await this.loadGlobalZBib(false);
@@ -547,7 +551,8 @@ export class BibManager {
             this.styleCache,
             this.plugin.cacheDir,
             style.id,
-            style.explicitPath
+            style.explicitPath,
+            getVaultRoot()
           )
         );
       }
